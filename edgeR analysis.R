@@ -50,6 +50,7 @@ DGEList_filtered_L <- DGEList_L[keepL, , keep.lib.sizes=FALSE]
 DGEList_norm_E <- calcNormFactors(DGEList_filtered_E)
 DGEList_norm_I <- calcNormFactors(DGEList_filtered_I)
 DGEList_norm_L <- calcNormFactors(DGEList_filtered_L)
+
 # dispersion estimation (multifactor)
 DGEList_norm_E <- estimateDisp(DGEList_norm_E, designE)
 DGEList_norm_I <- estimateDisp(DGEList_norm_I, designI)
@@ -60,7 +61,7 @@ fit_E <- glmQLFit(DGEList_norm_E, designE)
 fit_I <- glmQLFit(DGEList_norm_I, designI)
 fit_L <- glmQLFit(DGEList_norm_L, designL)
 
-# for late dataset I have got DE genes for resistance, inoculation, resistance:inoculation
+# for late dataset we have got DE genes for resistance, inoculation, resistance:inoculation
 qlf_L_ino_tr <- glmTreat(fit_L, coef=3, lfc=1)
 summary(decideTests(qlf_L_ino_tr))
 L_ino <- topTags(qlf_L_ino_tr, n = 563)
@@ -71,9 +72,26 @@ qlf_L_ino_resist_tr <- glmTreat(fit_L, coef=5, lfc=1)
 summary(decideTests(qlf_L_ino_resist_tr))
 L_ino_resist <- topTags(qlf_L_ino_resist_tr, n = 67)
 
-# I have filtered inoculation only DE genes in L_ino_only and resistance only into L_resist_only
+# We have filtered inoculation only DE genes in L_ino_only and resistance only into L_resist_only
 L_ino_only <- anti_join(L_ino$table, L_resist$table, by = 'Geneid')
 L_ino_only <- anti_join(L_ino_only, L_ino_resist$table, by = 'Geneid')
 
 L_resist_only <- anti_join(L_resist$table, L_ino$table, by = 'Geneid')
 L_resist_only <- anti_join(L_resist_only, L_ino_resist$table, by = 'Geneid')
+
+# Exporting GeneIDs to files
+
+positive <- filter(L_ino_only, logFC > 0)
+negative <- filter(L_ino_only, logFC < 0)
+write.table(positive$Geneid, file = 'L_ino_only_pos.txt', row.names = FALSE, col.names = FALSE)
+write.table(negative$Geneid, file = 'L_ino_only_neg.txt', row.names = FALSE, col.names = FALSE)
+
+positive <- filter(L_resist_only, logFC > 0)
+negative <- filter(L_resist_only, logFC < 0)
+write.table(positive$Geneid, file = 'L_resist_only_pos.txt', row.names = FALSE, col.names = FALSE)
+write.table(negative$Geneid, file = 'L_resist_only_neg.txt', row.names = FALSE, col.names = FALSE)
+
+positive <- filter(L_ino_resist$table, logFC > 0) 
+negative <- filter(L_ino_resist$table, logFC < 0)
+write.table(positive$Geneid, file = 'L_ino_resist_pos.txt', row.names = FALSE, col.names = FALSE)
+write.table(negative$Geneid, file = 'L_ino_resist_neg.txt', row.names = FALSE, col.names = FALSE)
